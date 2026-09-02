@@ -6,8 +6,8 @@ const STORAGE_KEYS = {
 };
 
 /* Model IDs — edit here if a provider retires a model. */
-const GEMINI_MODEL = 'gemini-2.0-flash';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const GEMINI_MODEL = 'gemini-3.5-flash';
+const GROQ_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
 const SYSTEM_PROMPT = `You are a study assistant that converts messy, copy-pasted text from a Google Slides presentation into study material for a middle-school Social Studies (Samhällsorientering) student.
 
