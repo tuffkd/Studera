@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SO Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header id="mainHeader" class="main-header">
+  <h1 class="logo">SO Study</h1>
+  <button id="settingsBtn" class="icon-btn" aria-label="Settings">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+</header>
+
+<main id="libraryView" class="view">
+  <div class="library-head">
+    <h2>Your decks</h2>
+    <button id="newDeckBtn" class="btn btn-primary">New deck</button>
+  </div>
+  <div id="deckList" class="deck-list"></div>
+  <div id="emptyState" class="empty-state" hidden>
+    <p>No decks yet.</p>
+    <p class="empty-sub">Paste your presentation text into the AI generator to create your first one.</p>
+  </div>
+</main>
+
+<section id="generatorView" class="view" hidden>
+  <button class="back-link" id="generatorBackBtn">&larr; Back</button>
+  <h2>Create a deck</h2>
+  <label for="deckNameInput">Deck name</label>
+  <input type="text" id="deckNameInput" placeholder="e.g. Ancient Greece">
+  <label for="pasteArea">Presentation text</label>
+  <textarea id="pasteArea" rows="12" placeholder="Paste the full text of your Google Slides presentation here — facts and test questions together, it doesn't need to be tidy."></textarea>
+  <button id="generateBtn" class="btn btn-primary">Generate deck</button>
+  <p id="generatorStatus" class="generator-status" hidden></p>
+</section>
+
+<section id="flashcardView" class="view study-view" hidden>
+  <div class="study-topbar">
+    <button class="exit-btn" id="flashcardExitBtn" aria-label="Exit">&times;</button>
+    <div class="progress-track"><div class="progress-fill" id="flashcardProgressFill"></div></div>
+    <span class="progress-label" id="flashcardProgressLabel"></span>
+  </div>
+  <div class="card-stage">
+    <div class="flashcard" id="flashcard" tabindex="0">
+      <div class="flashcard-inner">
+        <div class="flashcard-face flashcard-front" id="flashcardFront"></div>
+        <div class="flashcard-face flashcard-back" id="flashcardBack"></div>
+      </div>
+    </div>
+    <p class="tap-hint">Tap the card to flip it</p>
+  </div>
+  <div class="flashcard-controls">
+    <button class="control-btn wrong" id="wrongBtn">Got it wrong</button>
+    <button class="control-btn skip" id="skipBtn">Skip</button>
+    <button class="control-btn right" id="rightBtn">Got it right</button>
+  </div>
+</section>
+
+<section id="flashcardResultsView" class="view study-view" hidden>
+  <div class="results-box">
+    <h2>Session complete</h2>
+    <div class="results-stats" id="flashcardResultsStats"></div>
+    <div class="results-actions">
+      <button class="btn btn-secondary" id="flashcardRetryMissedBtn" hidden>Review missed cards</button>
+      <button class="btn btn-primary" id="flashcardBackToLibraryBtn">Back to decks</button>
+    </div>
+  </div>
+</section>
+
+<section id="quizView" class="view study-view" hidden>
+  <div class="study-topbar">
+    <button class="exit-btn" id="quizExitBtn" aria-label="Exit">&times;</button>
+    <div class="progress-track"><div class="progress-fill" id="quizProgressFill"></div></div>
+    <span class="progress-label" id="quizProgressLabel"></span>
+  </div>
+  <div class="quiz-stage">
+    <h2 class="quiz-question" id="quizQuestion"></h2>
+    <div class="quiz-options" id="quizOptions"></div>
+  </div>
+  <button class="btn btn-primary next-btn" id="quizNextBtn" hidden>Next</button>
+</section>
+
+<section id="quizResultsView" class="view study-view" hidden>
+  <div class="results-box">
+    <h2>Quiz complete</h2>
+    <div class="results-stats" id="quizResultsStats"></div>
+    <div class="results-actions">
+      <button class="btn btn-secondary" id="quizRetryBtn">Try again</button>
+      <button class="btn btn-primary" id="quizBackToLibraryBtn">Back to decks</button>
+    </div>
+  </div>
+</section>
+
+<div id="settingsModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <h2>Settings</h2>
+    <label for="providerSelect">AI provider</label>
+    <select id="providerSelect">
+      <option value="gemini">Google Gemini</option>
+      <option value="groq">Groq</option>
+    </select>
+    <label for="apiKeyInput">API key</label>
+    <input type="password" id="apiKeyInput" placeholder="Paste your key here" autocomplete="off">
+    <p class="hint" id="apiKeyHint"></p>
+    <p class="hint">Your key is stored only in this browser and is never sent anywhere except directly to the provider you pick.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="settingsCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="settingsSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="deleteModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <h2>Delete this deck?</h2>
+    <p id="deleteModalText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="deleteCancelBtn">Cancel</button>
+      <button class="btn btn-danger" id="deleteConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
