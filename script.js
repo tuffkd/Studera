@@ -178,17 +178,31 @@ function setGeneratorStatus(msg, type) {
   generatorStatus.hidden = false;
 }
 
+function findStudySet(obj, depth = 0) {
+  if (!obj || typeof obj !== 'object' || depth > 4) return null;
+  if (Array.isArray(obj.flashcards) && Array.isArray(obj.quiz)) return obj;
+  for (const key of Object.keys(obj)) {
+    const val = obj[key];
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const found = findStudySet(val, depth + 1);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 function parseAIResponse(rawText) {
   let cleaned = rawText.trim();
   cleaned = cleaned.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
   if (start === -1 || end === -1) throw new Error('The AI response did not contain JSON.');
-  const parsed = JSON.parse(cleaned.slice(start, end + 1));
-  if (!Array.isArray(parsed.flashcards) || !Array.isArray(parsed.quiz)) {
+  const parsedRoot = JSON.parse(cleaned.slice(start, end + 1));
+  const found = findStudySet(parsedRoot);
+  if (!found) {
     throw new Error('The AI response was missing flashcards or quiz data.');
   }
-  return parsed;
+  return found;
 }
 
 async function callGemini(apiKey, userText) {
