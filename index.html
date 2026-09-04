@@ -18,6 +18,7 @@
   </button>
 </header>
 
+<!-- ===== Library ===== -->
 <main id="libraryView" class="view">
   <div class="library-head">
     <h2>Your decks</h2>
@@ -26,21 +27,53 @@
   <div id="deckList" class="deck-list"></div>
   <div id="emptyState" class="empty-state" hidden>
     <p>No decks yet.</p>
-    <p class="empty-sub">Paste your presentation text into the AI generator to create your first one.</p>
+    <p class="empty-sub">Click "New deck" and paste your presentation text to get started.</p>
   </div>
 </main>
 
+<!-- ===== Generator ===== -->
 <section id="generatorView" class="view" hidden>
   <button class="back-link" id="generatorBackBtn">&larr; Back</button>
   <h2>Create a deck</h2>
-  <label for="deckNameInput">Deck name</label>
-  <input type="text" id="deckNameInput" placeholder="e.g. Ancient Greece">
-  <label for="pasteArea">Presentation text</label>
-  <textarea id="pasteArea" rows="12" placeholder="Paste the full text of your Google Slides presentation here — facts and test questions together, it doesn't need to be tidy."></textarea>
-  <button id="generateBtn" class="btn btn-primary">Generate deck</button>
-  <p id="generatorStatus" class="generator-status" hidden></p>
+
+  <!-- Step 1: Input -->
+  <div id="generatorStep1">
+    <label for="deckNameInput">Deck name</label>
+    <input type="text" id="deckNameInput" placeholder="e.g. Ancient Greece">
+    <label for="pasteArea">Presentation text</label>
+    <textarea id="pasteArea" rows="12" placeholder="Paste the full text of your Google Slides presentation here — facts and test questions together, it doesn't need to be tidy."></textarea>
+    <button id="analyzeBtn" class="btn btn-primary">Analyze Content</button>
+    <p id="analyzeStatus" class="generator-status" hidden></p>
+  </div>
+
+  <!-- Step 2: Parameters (shown after analyze) -->
+  <div id="generatorStep2" hidden>
+    <div class="reasoning-box" id="reasoningBox"></div>
+
+    <label>Difficulty</label>
+    <div class="difficulty-pills" id="difficultyPills">
+      <button class="pill-btn" data-diff="easy">Easy</button>
+      <button class="pill-btn pill-active" data-diff="medium">Medium</button>
+      <button class="pill-btn" data-diff="hard">Hard</button>
+    </div>
+
+    <div class="count-row">
+      <div class="count-input-group">
+        <label for="flashcardCountInput">Flashcards</label>
+        <input type="number" id="flashcardCountInput" min="1" max="50" value="12">
+      </div>
+      <div class="count-input-group">
+        <label for="quizCountInput">Quiz questions</label>
+        <input type="number" id="quizCountInput" min="1" max="30" value="6">
+      </div>
+    </div>
+
+    <button id="generateBtn" class="btn btn-primary">Generate Deck</button>
+    <p id="generateStatus" class="generator-status" hidden></p>
+  </div>
 </section>
 
+<!-- ===== Flashcard study ===== -->
 <section id="flashcardView" class="view study-view" hidden>
   <div class="study-topbar">
     <button class="exit-btn" id="flashcardExitBtn" aria-label="Exit">&times;</button>
@@ -63,6 +96,7 @@
   </div>
 </section>
 
+<!-- ===== Flashcard results ===== -->
 <section id="flashcardResultsView" class="view study-view" hidden>
   <div class="results-box">
     <h2>Session complete</h2>
@@ -74,6 +108,7 @@
   </div>
 </section>
 
+<!-- ===== Quiz study ===== -->
 <section id="quizView" class="view study-view" hidden>
   <div class="study-topbar">
     <button class="exit-btn" id="quizExitBtn" aria-label="Exit">&times;</button>
@@ -87,6 +122,7 @@
   <button class="btn btn-primary next-btn" id="quizNextBtn" hidden>Next</button>
 </section>
 
+<!-- ===== Quiz results ===== -->
 <section id="quizResultsView" class="view study-view" hidden>
   <div class="results-box">
     <h2>Quiz complete</h2>
@@ -98,6 +134,7 @@
   </div>
 </section>
 
+<!-- ===== Settings modal ===== -->
 <div id="settingsModal" class="modal-overlay" hidden>
   <div class="modal">
     <h2>Settings</h2>
@@ -109,7 +146,7 @@
     <label for="apiKeyInput">API key</label>
     <input type="password" id="apiKeyInput" placeholder="Paste your key here" autocomplete="off">
     <p class="hint" id="apiKeyHint"></p>
-    <p class="hint">Your key is stored only in this browser and is never sent anywhere except directly to the provider you pick.</p>
+    <p class="hint">Your key is stored only in this browser and never sent anywhere except directly to the provider you pick.</p>
     <div class="modal-actions">
       <button class="btn btn-secondary" id="settingsCancelBtn">Cancel</button>
       <button class="btn btn-primary" id="settingsSaveBtn">Save</button>
@@ -117,6 +154,7 @@
   </div>
 </div>
 
+<!-- ===== Delete modal ===== -->
 <div id="deleteModal" class="modal-overlay" hidden>
   <div class="modal">
     <h2>Delete this deck?</h2>
@@ -124,6 +162,36 @@
     <div class="modal-actions">
       <button class="btn btn-secondary" id="deleteCancelBtn">Cancel</button>
       <button class="btn btn-danger" id="deleteConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Edit modal ===== -->
+<div id="editModal" class="modal-overlay" hidden>
+  <div class="modal edit-modal">
+    <div class="edit-modal-head">
+      <h2>Edit deck</h2>
+      <button class="exit-btn" id="editModalCloseBtn">&times;</button>
+    </div>
+
+    <label for="editDeckName">Deck name</label>
+    <input type="text" id="editDeckName" placeholder="Deck name">
+
+    <div class="edit-section-head">
+      <h3>Flashcards</h3>
+      <button class="btn btn-small btn-secondary" id="addFlashcardBtn">+ Add card</button>
+    </div>
+    <div id="editFlashcardList" class="edit-item-list"></div>
+
+    <div class="edit-section-head">
+      <h3>Quiz questions</h3>
+      <button class="btn btn-small btn-secondary" id="addQuizBtn">+ Add question</button>
+    </div>
+    <div id="editQuizList" class="edit-item-list"></div>
+
+    <div class="modal-actions edit-modal-actions">
+      <button class="btn btn-secondary" id="editCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="editSaveBtn">Save changes</button>
     </div>
   </div>
 </div>
