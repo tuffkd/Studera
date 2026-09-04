@@ -18,13 +18,23 @@ The text may contain slide numbers, repeated headers, stray line breaks, and oth
 
 const LANGUAGE_RULE = `CRITICAL RULE: First detect the language the source text is written in. Every part of your output — reasoning, flashcard fronts and backs, quiz questions, and quiz options — must be written in that EXACT same language. Never translate or switch to English (or any other language) unless the source text itself is in English.`;
 
+const JSON_STRICTNESS_RULE = `CRITICAL OUTPUT-FORMAT RULE: Respond with ONE raw JSON object and NOTHING else.
+- No markdown code fences (no \`\`\`json, no \`\`\`).
+- No comments (no //, no /* */) anywhere in the JSON.
+- No trailing commas after the last item in an array or object.
+- No text before the opening { or after the closing }, not even a single word.
+- Every string must use double quotes, and every key must exactly match the schema given.
+- Your entire reply must be parseable directly by JSON.parse() with zero preprocessing.`;
+
 const ANALYZE_PROMPT = `You are a study-planning assistant. ${PRESENTATION_CONTEXT}
 
 ${LANGUAGE_RULE}
 
+${JSON_STRICTNESS_RULE}
+
 Do not write any flashcards or quiz questions yet. Read the material and recommend how much study content it supports.
 
-Return ONLY a single valid JSON object, no markdown fences, no commentary, matching exactly this shape:
+Return a JSON object matching exactly this shape:
 {"reasoning":"one or two short sentences naming roughly what the material covers and why you recommend these counts","recommendedFlashcards":number,"recommendedQuiz":number}
 
 Recommend enough flashcards to cover every distinct fact without repeating itself (typically 8-25), and a quiz count based on how many test questions actually appear in the text, or a reasonable number if none are explicit (typically 5-15).`;
@@ -41,12 +51,22 @@ function getGenerationPrompt(difficulty, flashcardCount, quizCount) {
 
 ${LANGUAGE_RULE}
 
+${JSON_STRICTNESS_RULE}
+
+CRITICAL COUNT REQUIREMENT — read this twice:
+- The "flashcards" array MUST contain EXACTLY ${flashcardCount} items. Not ${flashcardCount - 1}, not ${flashcardCount + 1} — EXACTLY ${flashcardCount}.
+- The "quiz" array MUST contain EXACTLY ${quizCount} items. Not ${quizCount - 1}, not ${quizCount + 1} — EXACTLY ${quizCount}.
+- If the source material feels thin, reuse different angles, examples, or sub-details from the same facts rather than stopping early — never return fewer items than requested.
+- If the source material has far more content than needed, pick the most important ${flashcardCount} facts and ${quizCount} test questions — never return more items than requested.
+
 Your job:
-1. From the FACTS section, write clear FLASHCARDS. Each has a short "front" (a question or term) and a concise "back" (the answer or fact). Do not copy full sentences verbatim — turn each fact into a testable question-and-answer pair. Write EXACTLY ${flashcardCount} flashcards.
-2. From the TEST QUESTIONS section, write multiple-choice QUIZ questions. Each needs exactly 4 "options" and one "correctIndex" (0-3). If the source already gives answer choices, clean them up and use them. If it doesn't, write 3 plausible wrong answers alongside the correct one. If there is no clear test-question section, generate reasonable quiz questions from the facts instead. Write EXACTLY ${quizCount} quiz questions.
+1. From the FACTS section, write clear FLASHCARDS. Each has a short "front" (a question or term) and a concise "back" (the answer or fact). Do not copy full sentences verbatim — turn each fact into a testable question-and-answer pair.
+2. From the TEST QUESTIONS section, write multiple-choice QUIZ questions. Each needs exactly 4 "options" and one "correctIndex" (0-3). If the source already gives answer choices, clean them up and use them. If it doesn't, write 3 plausible wrong answers alongside the correct one. If there is no clear test-question section, generate reasonable quiz questions from the facts instead.
 3. ${note}
-4. Return ONLY a single valid JSON object, no markdown fences, no commentary, matching exactly this shape:
-{"flashcards":[{"front":"string","back":"string"}],"quiz":[{"question":"string","options":["string","string","string","string"],"correctIndex":0}]}`;
+4. Return a JSON object matching exactly this shape:
+{"flashcards":[{"front":"string","back":"string"}],"quiz":[{"question":"string","options":["string","string","string","string"],"correctIndex":0}]}
+
+BEFORE YOU RESPOND: count the objects you wrote in "flashcards" — it must equal ${flashcardCount}. Count the objects you wrote in "quiz" — it must equal ${quizCount}. If either count is wrong, add or remove items until both match exactly, then output the final JSON.`;
 }
 
 /* ============ State ============ */
@@ -221,7 +241,11 @@ function extractJsonObject(rawText) {
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
   if (start === -1 || end === -1) throw new Error('The AI response did not contain JSON.');
-  return JSON.parse(cleaned.slice(start, end + 1));
+  cleaned = cleaned.slice(start, end + 1);
+  // Safety net for models that still slip in trailing commas or // comments.
+  cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
+  cleaned = cleaned.replace(/\/\/[^\n]*$/gm, '');
+  return JSON.parse(cleaned);
 }
 
 function findStudySet(obj, depth = 0) {
@@ -390,12 +414,16 @@ async function generateDeck() {
     const raw = await callAI(prompt, pendingGeneration.sourceText);
     const parsed = parseGenerateResponse(raw);
 
+    // Safety net: if the model still drifts from the requested counts, clamp rather than fail.
+    const trimmedFlashcards = parsed.flashcards.slice(0, flashcardCount);
+    const trimmedQuiz = parsed.quiz.slice(0, quizCount);
+
     const deck = {
       id: uid(),
       name: pendingGeneration.deckName,
       createdAt: Date.now(),
-      flashcards: parsed.flashcards.map(f => ({ id: uid(), front: f.front, back: f.back })),
-      quiz: parsed.quiz.map(q => ({ id: uid(), question: q.question, options: q.options, correctIndex: q.correctIndex })),
+      flashcards: trimmedFlashcards.map(f => ({ id: uid(), front: f.front, back: f.back })),
+      quiz: trimmedQuiz.map(q => ({ id: uid(), question: q.question, options: q.options, correctIndex: q.correctIndex })),
     };
 
     state.decks.push(deck);
