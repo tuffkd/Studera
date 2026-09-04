@@ -474,3 +474,138 @@ button {
   .flashcard-controls { flex-direction: column; }
   .control-btn { max-width: none; }
 }
+
+/* ---------- Generator: reasoning + difficulty + counts ---------- */
+.reasoning-box {
+  background: var(--sage-tint);
+  color: var(--sage-deep);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0.5rem 0 1.25rem;
+}
+
+.difficulty-pills {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.pill-btn {
+  flex: 1;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  padding: 0.55rem 0.5rem;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.pill-btn:hover { border-color: var(--sage); }
+
+.pill-btn.pill-active {
+  background: var(--sage);
+  border-color: var(--sage);
+  color: #fff;
+}
+
+.count-row {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.count-input-group { flex: 1; }
+.count-input-group label { margin-top: 0; }
+
+#generateBtn { margin-top: 1.5rem; width: 100%; }
+
+/* ---------- Deck editing ---------- */
+.edit-modal {
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.edit-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.edit-modal-head .exit-btn { font-size: 1.4rem; }
+
+.edit-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.edit-section-head h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.edit-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.edit-item {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem;
+}
+
+.edit-item-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.edit-item-fields { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+
+.edit-item textarea,
+.edit-item input[type="text"] {
+  background: var(--surface);
+}
+
+.edit-remove-btn {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  font-size: 1.3rem;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.edit-remove-btn:hover { color: var(--coral); background: var(--coral-tint); }
+
+.edit-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.edit-option-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.edit-option-row input[type="radio"] { accent-color: var(--sage); flex-shrink: 0; }
+.edit-option-row input[type="text"] { flex: 1; padding: 0.45rem 0.7rem; font-size: 0.9rem; }
+
+.edit-modal-actions { margin-top: 1.75rem; }
