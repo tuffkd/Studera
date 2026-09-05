@@ -64,12 +64,14 @@ Your job:
 2. From the TEST QUESTIONS section, write multiple-choice QUIZ questions (1 correct, 3 plausible wrong options). IF there are not enough test questions in the text to reach EXACTLY ${quizCount}, you MUST invent the remaining multiple-choice questions yourself using the FACTS section to make up the difference.
 3. ${note}
 
-Return ONE valid JSON object matching exactly this shape. Use the "_setup" key to do your counting and planning first so you don't miss the targets:
+Return ONE valid JSON object matching exactly this shape:
 {
   "_setup": "State your target counts here and your plan to hit exactly ${flashcardCount} flashcards and ${quizCount} quiz questions.",
   "flashcards": [{"front":"string","back":"string"}],
   "quiz": [{"question":"string","options":["string","string","string","string"],"correctIndex":0}]
-}`;
+}
+
+CRITICAL: Output ONLY valid JSON. Do NOT wrap the JSON in markdown backticks (\`\`\`json). Do NOT output any conversational text before or after the JSON. Your entire response MUST start with a { and end with a }.`;
 }
 
 /* ============ State ============ */
