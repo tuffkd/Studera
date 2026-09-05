@@ -61,7 +61,7 @@ CRITICAL COUNT REQUIREMENT — read this twice:
 
 Your job:
 1. From the FACTS section, write clear FLASHCARDS. Each has a short "front" (a question or term) and a concise "back" (the answer or fact). Do not copy full sentences verbatim — turn each fact into a testable question-and-answer pair.
-2. From the TEST QUESTIONS section, write multiple-choice QUIZ questions. Each needs exactly 4 "options" and one "correctIndex" (0-3). If the source already gives answer choices, clean them up and use them. If it doesn't, write 3 plausible wrong answers alongside the correct one. If there is no clear test-question section, generate reasonable quiz questions from the facts instead.
+2. From the TEST QUESTIONS section, write multiple-choice QUIZ questions. Each needs exactly 4 "options" and one "correctIndex" (0-3). If the source already gives answer choices, clean them up and use them. If it doesn't, write 3 plausible wrong answers alongside the correct one. IF there are not enough test questions in the text to reach EXACTLY ${quizCount}, you MUST invent the remaining multiple-choice questions yourself using the FACTS section to make up the difference.
 3. ${note}
 4. Return a JSON object matching exactly this shape:
 {"flashcards":[{"front":"string","back":"string"}],"quiz":[{"question":"string","options":["string","string","string","string"],"correctIndex":0}]}
