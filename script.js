@@ -47,26 +47,29 @@ const DIFFICULTY_NOTES = {
 
 function getGenerationPrompt(difficulty, flashcardCount, quizCount) {
   const note = DIFFICULTY_NOTES[difficulty] || DIFFICULTY_NOTES.medium;
-  return `You are a study assistant that converts messy, copy-pasted text from a Google Slides presentation into study material for a middle-school Social Studies (Samhällsorientering) student. ${PRESENTATION_CONTEXT}
+
+  return `You are an expert curriculum designer converting messy Google Slides text into study materials for 7th-grade Social Studies (Samhällsorientering) students. ${PRESENTATION_CONTEXT}
 
 ${LANGUAGE_RULE}
 
 ${JSON_STRICTNESS_RULE}
 
-CRITICAL COUNT REQUIREMENT — read this twice:
-- The "flashcards" array MUST contain EXACTLY ${flashcardCount} items. Not ${flashcardCount - 1}, not ${flashcardCount + 1} — EXACTLY ${flashcardCount}.
-- The "quiz" array MUST contain EXACTLY ${quizCount} items. Not ${quizCount - 1}, not ${quizCount + 1} — EXACTLY ${quizCount}.
-- If the source material feels thin, reuse different angles, examples, or sub-details from the same facts rather than stopping early — never return fewer items than requested.
-- If the source material has far more content than needed, pick the most important ${flashcardCount} facts and ${quizCount} test questions — never return more items than requested.
+COUNT ENFORCEMENT:
+- "flashcards" array: EXACTLY ${flashcardCount} objects, "index" fields 1 to ${flashcardCount} in order.
+- "quiz" array: EXACTLY ${quizCount} objects, "index" fields 1 to ${quizCount} in order.
+- Use existing TEST QUESTIONS first, then invent more from FACTS until index reaches ${quizCount}. Never stop before index ${quizCount}.
+- If facts run out, reuse facts from new angles. Running out of source material is NOT a valid reason to stop early.
 
-Your job:
-1. From the FACTS section, write clear FLASHCARDS. Each has a short "front" (a question or term) and a concise "back" (the answer or fact). Do not copy full sentences verbatim — turn each fact into a testable question-and-answer pair.
-2. From the TEST QUESTIONS section, write multiple-choice QUIZ questions. Each needs exactly 4 "options" and one "correctIndex" (0-3). If the source already gives answer choices, clean them up and use them. If it doesn't, write 3 plausible wrong answers alongside the correct one. IF there are not enough test questions in the text to reach EXACTLY ${quizCount}, you MUST invent the remaining multiple-choice questions yourself using the FACTS section to make up the difference.
-3. ${note}
-4. Return a JSON object matching exactly this shape:
-{"flashcards":[{"front":"string","back":"string"}],"quiz":[{"question":"string","options":["string","string","string","string"],"correctIndex":0}]}
+${note}
 
-BEFORE YOU RESPOND: count the objects you wrote in "flashcards" — it must equal ${flashcardCount}. Count the objects you wrote in "quiz" — it must equal ${quizCount}. If either count is wrong, add or remove items until both match exactly, then output the final JSON.`;
+Return ONE JSON object:
+{
+  "_setup": "Plan: ${flashcardCount} flashcards, ${quizCount} quiz questions. I will not stop until both index counters reach their targets.",
+  "flashcards": [{"index":1,"front":"...","back":"..."}, {"index":2,"front":"...","back":"..."}],
+  "quiz": [{"index":1,"question":"...","options":["A","B","C","D"],"correctIndex":0}, {"index":2,"question":"...","options":["A","B","C","D"],"correctIndex":2}]
+}
+
+Your response MUST start with { and end with }. No markdown, no commentary.`;
 }
 
 /* ============ State ============ */
@@ -305,6 +308,7 @@ async function callGroq(apiKey, systemPrompt, userText) {
     body: JSON.stringify({
       model: GROQ_MODEL,
       temperature: 0.4,
+      max_tokens: 8000,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: systemPrompt },
@@ -398,6 +402,21 @@ difficultyPills.addEventListener('click', e => {
 });
 
 /* ============ Generator: step 3 -> generate ============ */
+async function generateDeckWithRetry(prompt, sourceText, flashcardCount, quizCount, maxAttempts = 2) {
+  let parsed = parseGenerateResponse(await callAI(prompt, sourceText));
+  let attempts = 1;
+  while (attempts < maxAttempts && (parsed.flashcards.length < flashcardCount || parsed.quiz.length < quizCount)) {
+    const missingF = flashcardCount - parsed.flashcards.length;
+    const missingQ = quizCount - parsed.quiz.length;
+    const continuePrompt = `${prompt}\n\nYou previously only produced ${parsed.flashcards.length}/${flashcardCount} flashcards and ${parsed.quiz.length}/${quizCount} quiz questions. Generate ONLY the missing ${missingF} flashcards and ${missingQ} quiz questions now, continuing the index numbering, in the same JSON shape.`;
+    const more = parseGenerateResponse(await callAI(continuePrompt, sourceText));
+    parsed.flashcards = parsed.flashcards.concat(more.flashcards);
+    parsed.quiz = parsed.quiz.concat(more.quiz);
+    attempts++;
+  }
+  return parsed;
+}
+
 async function generateDeck() {
   if (!pendingGeneration) return;
 
@@ -411,8 +430,7 @@ async function generateDeck() {
 
   try {
     const prompt = getGenerationPrompt(currentDifficulty, flashcardCount, quizCount);
-    const raw = await callAI(prompt, pendingGeneration.sourceText);
-    const parsed = parseGenerateResponse(raw);
+    const parsed = await generateDeckWithRetry(prompt, pendingGeneration.sourceText, flashcardCount, quizCount);
 
     // Safety net: if the model still drifts from the requested counts, clamp rather than fail.
     const trimmedFlashcards = parsed.flashcards.slice(0, flashcardCount);
