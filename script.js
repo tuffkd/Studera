@@ -47,7 +47,6 @@ const DIFFICULTY_NOTES = {
 
 function getGenerationPrompt(difficulty, flashcardCount, quizCount) {
   const note = DIFFICULTY_NOTES[difficulty] || DIFFICULTY_NOTES.medium;
-  
   return `You are a study assistant that converts messy, copy-pasted text from a Google Slides presentation into study material for a middle-school Social Studies (Samhällsorientering) student. ${PRESENTATION_CONTEXT}
 
 ${LANGUAGE_RULE}
@@ -55,23 +54,19 @@ ${LANGUAGE_RULE}
 ${JSON_STRICTNESS_RULE}
 
 CRITICAL COUNT REQUIREMENT — read this twice:
-- The "flashcards" array MUST contain EXACTLY ${flashcardCount} items. Not ${flashcardCount - 1}, not ${flashcardCount + 1}.
-- The "quiz" array MUST contain EXACTLY ${quizCount} items. Not ${quizCount - 1}, not ${quizCount + 1}.
-- If the source material feels thin, reuse different angles, examples, or sub-details from the same facts rather than stopping early.
+- The "flashcards" array MUST contain EXACTLY ${flashcardCount} items. Not ${flashcardCount - 1}, not ${flashcardCount + 1} — EXACTLY ${flashcardCount}.
+- The "quiz" array MUST contain EXACTLY ${quizCount} items. Not ${quizCount - 1}, not ${quizCount + 1} — EXACTLY ${quizCount}.
+- If the source material feels thin, reuse different angles, examples, or sub-details from the same facts rather than stopping early — never return fewer items than requested.
+- If the source material has far more content than needed, pick the most important ${flashcardCount} facts and ${quizCount} test questions — never return more items than requested.
 
 Your job:
-1. From the FACTS section, write clear FLASHCARDS. Each has a short "front" (a question or term) and a concise "back".
-2. From the TEST QUESTIONS section, write multiple-choice QUIZ questions (1 correct, 3 plausible wrong options). IF there are not enough test questions in the text to reach EXACTLY ${quizCount}, you MUST invent the remaining multiple-choice questions yourself using the FACTS section to make up the difference.
+1. From the FACTS section, write clear FLASHCARDS. Each has a short "front" (a question or term) and a concise "back" (the answer or fact). Do not copy full sentences verbatim — turn each fact into a testable question-and-answer pair.
+2. From the TEST QUESTIONS section, write multiple-choice QUIZ questions. Each needs exactly 4 "options" and one "correctIndex" (0-3). If the source already gives answer choices, clean them up and use them. If it doesn't, write 3 plausible wrong answers alongside the correct one. IF there are not enough test questions in the text to reach EXACTLY ${quizCount}, you MUST invent the remaining multiple-choice questions yourself using the FACTS section to make up the difference.
 3. ${note}
+4. Return a JSON object matching exactly this shape:
+{"flashcards":[{"front":"string","back":"string"}],"quiz":[{"question":"string","options":["string","string","string","string"],"correctIndex":0}]}
 
-Return ONE valid JSON object matching exactly this shape:
-{
-  "_setup": "State your target counts here and your plan to hit exactly ${flashcardCount} flashcards and ${quizCount} quiz questions.",
-  "flashcards": [{"front":"string","back":"string"}],
-  "quiz": [{"question":"string","options":["string","string","string","string"],"correctIndex":0}]
-}
-
-CRITICAL: Output ONLY valid JSON. Do NOT wrap the JSON in markdown backticks (\`\`\`json). Do NOT output any conversational text before or after the JSON. Your entire response MUST start with a { and end with a }.`;
+BEFORE YOU RESPOND: count the objects you wrote in "flashcards" — it must equal ${flashcardCount}. Count the objects you wrote in "quiz" — it must equal ${quizCount}. If either count is wrong, add or remove items until both match exactly, then output the final JSON.`;
 }
 
 /* ============ State ============ */
